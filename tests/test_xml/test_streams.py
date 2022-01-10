@@ -215,7 +215,9 @@ def test_streams() -> None:
     stream_info = mkv_info.library_xml.XML_Parser.parse_stream_details(data)
     assert stream_info == mkv_info.media_library.StreamDetails(
         videos=(
-            mkv_info.media_library.VideoStream(codec="h264", width=1920, height=864,),
+            mkv_info.media_library.VideoStream(
+                codec="h264", width=1920, height=864,
+            ),
         ),
         audios=(
             mkv_info.media_library.AudioStream(
@@ -252,7 +254,9 @@ def test_streams_only_video() -> None:
     stream_info = mkv_info.library_xml.XML_Parser.parse_stream_details(data)
     assert stream_info == mkv_info.media_library.StreamDetails(
         videos=(
-            mkv_info.media_library.VideoStream(codec="h264", width=1920, height=864,),
+            mkv_info.media_library.VideoStream(
+                codec="h264", width=1920, height=864,
+            ),
         ),
     )
     assert len(stream_info.videos) == 1
@@ -285,8 +289,12 @@ def test_streams_only_video() -> None:
     stream_info = mkv_info.library_xml.XML_Parser.parse_stream_details(data)
     assert stream_info == mkv_info.media_library.StreamDetails(
         videos=(
-            mkv_info.media_library.VideoStream(codec="h264", width=1920, height=864,),
-            mkv_info.media_library.VideoStream(codec="h265", width=1921, height=865,),
+            mkv_info.media_library.VideoStream(
+                codec="h264", width=1920, height=864,
+            ),
+            mkv_info.media_library.VideoStream(
+                codec="h265", width=1921, height=865,
+            ),
         ),
     )
     assert len(stream_info.videos) == 2

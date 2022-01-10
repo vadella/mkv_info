@@ -15,9 +15,11 @@ class LibraryFactory(typing.Protocol):
     @classmethod
     def parse_sub_stream(cls, T) -> SubStream:
         raise NotImplementedError
+
     @classmethod
     def parse_video_stream(cls, T) -> VideoStream:
         raise NotImplementedError
+
     @classmethod
     def parse_audio_stream(cls, T) -> AudioStream:
         raise NotImplementedError
@@ -74,7 +76,9 @@ class Movie:
     title: typing.Optional[str] = None
     year: typing.Optional[int] = None
     duration: typing.Optional[datetime.timedelta] = None
-    streams: StreamDetails = dataclasses.field(default_factory=lambda: StreamDetails())
+    streams: StreamDetails = dataclasses.field(
+        default_factory=lambda: StreamDetails()
+    )
 
     @property
     def video_streams(self) -> typing.Iterator[VideoStream]:
@@ -97,7 +101,11 @@ class Movie:
         yield from self.sub_streams
 
     def __str__(self):
-        repr = f"""Movie(title=<{self.title}>, year=<{self.year}>, duration=<{self.duration}>)"""
+        repr = (
+            f"Movie(title=<{self.title}>, "
+            f"year=<{self.year}>, "
+            f"duration=<{self.duration}>)"
+        )
         stream_str = "\n\t".join(str(s) for s in self.streams_iterator)
         return repr + "\n\t" + stream_str
 
@@ -109,7 +117,9 @@ class Episode:
     duration: typing.Optional[datetime.timedelta] = None
     season: typing.Optional[int] = None
     episode: typing.Optional[int] = None
-    streams: StreamDetails = dataclasses.field(default_factory=lambda: StreamDetails())
+    streams: StreamDetails = dataclasses.field(
+        default_factory=lambda: StreamDetails()
+    )
 
     @property
     def video_streams(self) -> typing.Iterator[VideoStream]:

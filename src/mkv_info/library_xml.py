@@ -23,26 +23,37 @@ class XML_Parser(media_library.LibraryFactory):
         if streaminfo is None:
             return media_library.StreamDetails()
         videos = tuple(
-            cls.parse_video_stream(stream) for stream in streaminfo.findall("video")
+            cls.parse_video_stream(stream)
+            for stream in streaminfo.findall("video")
         )
         audios = tuple(
-            cls.parse_audio_stream(stream) for stream in streaminfo.findall("audio")
+            cls.parse_audio_stream(stream)
+            for stream in streaminfo.findall("audio")
         )
         subs = tuple(
-            cls.parse_sub_stream(stream) for stream in streaminfo.findall("subtitle")
+            cls.parse_sub_stream(stream)
+            for stream in streaminfo.findall("subtitle")
         )
-        return media_library.StreamDetails(videos=videos, audios=audios, subs=subs)
+        return media_library.StreamDetails(
+            videos=videos, audios=audios, subs=subs
+        )
 
     @classmethod
-    def parse_video_stream(cls, stream: ET.Element) -> media_library.VideoStream:
+    def parse_video_stream(
+        cls, stream: ET.Element
+    ) -> media_library.VideoStream:
         codec = get_text(stream, "codec")
         height = get_int(stream, "height")
         width = get_int(stream, "width")
 
-        return media_library.VideoStream(codec=codec, width=width, height=height,)
+        return media_library.VideoStream(
+            codec=codec, width=width, height=height,
+        )
 
     @classmethod
-    def parse_audio_stream(cls, stream: ET.Element) -> media_library.AudioStream:
+    def parse_audio_stream(
+        cls, stream: ET.Element
+    ) -> media_library.AudioStream:
         codec: typing.Optional[str] = get_text(stream, "codec")
         language: typing.Optional[str] = get_text(stream, "language")
         channels: typing.Optional[int] = get_int(stream, "channels")
@@ -88,13 +99,21 @@ class XML_Parser(media_library.LibraryFactory):
         year = get_int(data, "year")
         season = get_int(data, "season")
         episode = get_int(data, "episode")
-        episodes = [cls.parse_episode(tag) for tag in data.iter("episodedetails")]
+        episodes = [
+            cls.parse_episode(tag) for tag in data.iter("episodedetails")
+        ]
         return media_library.Series(
-            title=title, year=year, season=season, episode=episode, episodes=episodes,
+            title=title,
+            year=year,
+            season=season,
+            episode=episode,
+            episodes=episodes,
         )
 
     @classmethod
-    def parse_video_database(cls, data: ET.Element) -> media_library.VideoDatabase:
+    def parse_video_database(
+        cls, data: ET.Element
+    ) -> media_library.VideoDatabase:
         return media_library.VideoDatabase(
             movies=[cls.parse_movie(tag) for tag in data.iter("movie")],
             series=[cls.parse_series(tag) for tag in data.iter("tvshow")],
@@ -115,7 +134,9 @@ def get_int(element: ET.Element, tag: str) -> typing.Optional[int]:
     return int(data.text)
 
 
-def get_duration(element: ET.Element, tag: str) -> typing.Optional[datetime.timedelta]:
+def get_duration(
+    element: ET.Element, tag: str
+) -> typing.Optional[datetime.timedelta]:
     data = element.find(tag)
     if data is None or data.text is None:
         return None

@@ -82,7 +82,9 @@ def test_episode() -> None:
     assert episode.episode == 10
     assert episode.streams == mkv_info.media_library.StreamDetails(
         videos=(
-            mkv_info.media_library.VideoStream(codec="h264", width=1920, height=1168,),
+            mkv_info.media_library.VideoStream(
+                codec="h264", width=1920, height=1168,
+            ),
         ),
         audios=(
             mkv_info.media_library.AudioStream(
