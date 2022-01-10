@@ -1,7 +1,8 @@
 import xml.etree.ElementTree as ET
 from pathlib import Path
 
-import mkv_info.library_xml as library_xml
+import mkv_info.library_xml
+import mkv_info.media_library
 
 DATA_DIR = Path("data")
 
@@ -9,18 +10,30 @@ DATA_DIR = Path("data")
 def test_empty() -> None:
     data = ET.fromstring("""<empty/>""")
     assert (
-        library_xml.StreamDetails.from_data(data)
-        == library_xml.StreamDetails()
+        mkv_info.library_xml.XML_Parser.parse_stream_details(data)
+        == mkv_info.media_library.StreamDetails()
     )
-    assert library_xml.Movie.from_data(data) == library_xml.Movie()
-    assert library_xml.VideoStream.from_data(data) == library_xml.VideoStream()
-    assert library_xml.AudioStream.from_data(data) == library_xml.AudioStream()
-    assert library_xml.SubStream.from_data(data) == library_xml.SubStream()
+    assert (
+        mkv_info.library_xml.XML_Parser.parse_movie(data)
+        == mkv_info.media_library.Movie()
+    )
+    assert (
+        mkv_info.library_xml.XML_Parser.parse_video_stream(data)
+        == mkv_info.media_library.VideoStream()
+    )
+    assert (
+        mkv_info.library_xml.XML_Parser.parse_audio_stream(data)
+        == mkv_info.media_library.AudioStream()
+    )
+    assert (
+        mkv_info.library_xml.XML_Parser.parse_sub_stream(data)
+        == mkv_info.media_library.SubStream()
+    )
 
     data = ET.fromstring("""<streamdetails></streamdetails>""")
     assert (
-        library_xml.StreamDetails.from_data(data)
-        == library_xml.StreamDetails()
+        mkv_info.library_xml.XML_Parser.parse_stream_details(data)
+        == mkv_info.media_library.StreamDetails()
     )
 
 
@@ -32,8 +45,8 @@ def test_video_only_height() -> None:
         </video>
         """
     )
-    video_stream = library_xml.VideoStream.from_data(data)
-    assert video_stream == library_xml.VideoStream(height=864)
+    video_stream = mkv_info.library_xml.XML_Parser.parse_video_stream(data)
+    assert video_stream == mkv_info.media_library.VideoStream(height=864)
     assert video_stream.codec is None
     assert video_stream.width is None
     assert video_stream.height == 864
@@ -47,8 +60,8 @@ def test_video_only_codec() -> None:
         </video>
         """
     )
-    video_stream = library_xml.VideoStream.from_data(data)
-    assert video_stream == library_xml.VideoStream(codec="h264")
+    video_stream = mkv_info.library_xml.XML_Parser.parse_video_stream(data)
+    assert video_stream == mkv_info.media_library.VideoStream(codec="h264")
     assert video_stream.codec == "h264"
     assert video_stream.width is None
     assert video_stream.height is None
@@ -62,8 +75,8 @@ def test_video_only_width() -> None:
         </video>
         """
     )
-    video_stream = library_xml.VideoStream.from_data(data)
-    assert video_stream == library_xml.VideoStream(width=1920)
+    video_stream = mkv_info.library_xml.XML_Parser.parse_video_stream(data)
+    assert video_stream == mkv_info.media_library.VideoStream(width=1920)
     assert video_stream.codec is None
     assert video_stream.width == 1920
     assert video_stream.height is None
@@ -82,8 +95,8 @@ def test_video() -> None:
         </video>
         """
     )
-    video_stream = library_xml.VideoStream.from_data(data)
-    assert video_stream == library_xml.VideoStream(
+    video_stream = mkv_info.library_xml.XML_Parser.parse_video_stream(data)
+    assert video_stream == mkv_info.media_library.VideoStream(
         codec="h264", width=1920, height=864,
     )
     assert video_stream.codec == "h264"
@@ -99,8 +112,8 @@ def test_audio_only_codec() -> None:
         </audio>
         """
     )
-    audio_stream = library_xml.AudioStream.from_data(data)
-    assert audio_stream == library_xml.AudioStream(codec="ac-3",)
+    audio_stream = mkv_info.library_xml.XML_Parser.parse_audio_stream(data)
+    assert audio_stream == mkv_info.media_library.AudioStream(codec="ac-3",)
     assert audio_stream.codec == "ac-3"
     assert audio_stream.language is None
     assert audio_stream.channels is None
@@ -114,8 +127,8 @@ def test_audio_only_language() -> None:
         </audio>
         """
     )
-    audio_stream = library_xml.AudioStream.from_data(data)
-    assert audio_stream == library_xml.AudioStream(language="eng",)
+    audio_stream = mkv_info.library_xml.XML_Parser.parse_audio_stream(data)
+    assert audio_stream == mkv_info.media_library.AudioStream(language="eng",)
     assert audio_stream.codec is None
     assert audio_stream.language == "eng"
     assert audio_stream.channels is None
@@ -129,8 +142,8 @@ def test_audio_only_channels() -> None:
         </audio>
         """
     )
-    audio_stream = library_xml.AudioStream.from_data(data)
-    assert audio_stream == library_xml.AudioStream(channels=6,)
+    audio_stream = mkv_info.library_xml.XML_Parser.parse_audio_stream(data)
+    assert audio_stream == mkv_info.media_library.AudioStream(channels=6,)
     assert audio_stream.codec is None
     assert audio_stream.language is None
     assert audio_stream.channels == 6
@@ -146,8 +159,8 @@ def test_audio() -> None:
         </audio>
         """
     )
-    audio_stream = library_xml.AudioStream.from_data(data)
-    assert audio_stream == library_xml.AudioStream(
+    audio_stream = mkv_info.library_xml.XML_Parser.parse_audio_stream(data)
+    assert audio_stream == mkv_info.media_library.AudioStream(
         codec="ac-3", language="eng", channels=6,
     )
     assert audio_stream.codec == "ac-3"
@@ -164,8 +177,8 @@ def test_sub() -> None:
         </subtitle>
         """
     )
-    sub_stream = library_xml.SubStream.from_data(data)
-    assert sub_stream == library_xml.SubStream(language="eng")
+    sub_stream = mkv_info.library_xml.XML_Parser.parse_sub_stream(data)
+    assert sub_stream == mkv_info.media_library.SubStream(language="eng")
     assert sub_stream.language == "eng"
 
 
@@ -199,17 +212,19 @@ def test_streams() -> None:
         </fileinfo>
         """
     )
-    stream_info = library_xml.StreamDetails.from_data(data)
-    assert stream_info == library_xml.StreamDetails(
+    stream_info = mkv_info.library_xml.XML_Parser.parse_stream_details(data)
+    assert stream_info == mkv_info.media_library.StreamDetails(
         videos=(
-            library_xml.VideoStream(codec="h264", width=1920, height=864,),
+            mkv_info.media_library.VideoStream(codec="h264", width=1920, height=864,),
         ),
         audios=(
-            library_xml.AudioStream(codec="ac-3", language="eng", channels=6,),
+            mkv_info.media_library.AudioStream(
+                codec="ac-3", language="eng", channels=6,
+            ),
         ),
         subs=(
-            library_xml.SubStream(language="eng",),
-            library_xml.SubStream(language="dut",),
+            mkv_info.media_library.SubStream(language="eng",),
+            mkv_info.media_library.SubStream(language="dut",),
         ),
     )
     assert len(stream_info.videos) == 1
@@ -234,10 +249,10 @@ def test_streams_only_video() -> None:
         </fileinfo>
         """
     )
-    stream_info = library_xml.StreamDetails.from_data(data)
-    assert stream_info == library_xml.StreamDetails(
+    stream_info = mkv_info.library_xml.XML_Parser.parse_stream_details(data)
+    assert stream_info == mkv_info.media_library.StreamDetails(
         videos=(
-            library_xml.VideoStream(codec="h264", width=1920, height=864,),
+            mkv_info.media_library.VideoStream(codec="h264", width=1920, height=864,),
         ),
     )
     assert len(stream_info.videos) == 1
@@ -267,11 +282,11 @@ def test_streams_only_video() -> None:
         </fileinfo>
         """
     )
-    stream_info = library_xml.StreamDetails.from_data(data)
-    assert stream_info == library_xml.StreamDetails(
+    stream_info = mkv_info.library_xml.XML_Parser.parse_stream_details(data)
+    assert stream_info == mkv_info.media_library.StreamDetails(
         videos=(
-            library_xml.VideoStream(codec="h264", width=1920, height=864,),
-            library_xml.VideoStream(codec="h265", width=1921, height=865,),
+            mkv_info.media_library.VideoStream(codec="h264", width=1920, height=864,),
+            mkv_info.media_library.VideoStream(codec="h265", width=1921, height=865,),
         ),
     )
     assert len(stream_info.videos) == 2
@@ -293,10 +308,12 @@ def test_streams_only_audio() -> None:
         </fileinfo>
         """
     )
-    stream_info = library_xml.StreamDetails.from_data(data)
-    assert stream_info == library_xml.StreamDetails(
+    stream_info = mkv_info.library_xml.XML_Parser.parse_stream_details(data)
+    assert stream_info == mkv_info.media_library.StreamDetails(
         audios=(
-            library_xml.AudioStream(codec="ac-3", language="eng", channels=6,),
+            mkv_info.media_library.AudioStream(
+                codec="ac-3", language="eng", channels=6,
+            ),
         ),
     )
     assert len(stream_info.videos) == 0
@@ -320,11 +337,15 @@ def test_streams_only_audio() -> None:
         </fileinfo>
         """
     )
-    stream_info = library_xml.StreamDetails.from_data(data)
-    assert stream_info == library_xml.StreamDetails(
+    stream_info = mkv_info.library_xml.XML_Parser.parse_stream_details(data)
+    assert stream_info == mkv_info.media_library.StreamDetails(
         audios=(
-            library_xml.AudioStream(codec="ac-3", language="eng", channels=6,),
-            library_xml.AudioStream(codec="ac-4", language="dut", channels=7,),
+            mkv_info.media_library.AudioStream(
+                codec="ac-3", language="eng", channels=6,
+            ),
+            mkv_info.media_library.AudioStream(
+                codec="ac-4", language="dut", channels=7,
+            ),
         ),
     )
     assert len(stream_info.videos) == 0
@@ -345,9 +366,9 @@ def test_streams_only_subs() -> None:
         </fileinfo>
         """
     )
-    stream_info = library_xml.StreamDetails.from_data(data)
-    assert stream_info == library_xml.StreamDetails(
-        subs=(library_xml.SubStream(language="dut",),),
+    stream_info = mkv_info.library_xml.XML_Parser.parse_stream_details(data)
+    assert stream_info == mkv_info.media_library.StreamDetails(
+        subs=(mkv_info.media_library.SubStream(language="dut",),),
     )
     assert len(stream_info.videos) == 0
     assert len(stream_info.audios) == 0
@@ -369,11 +390,11 @@ def test_streams_only_subs() -> None:
         </fileinfo>
         """
     )
-    stream_info = library_xml.StreamDetails.from_data(data)
-    assert stream_info == library_xml.StreamDetails(
+    stream_info = mkv_info.library_xml.XML_Parser.parse_stream_details(data)
+    assert stream_info == mkv_info.media_library.StreamDetails(
         subs=(
-            library_xml.SubStream(language="eng",),
-            library_xml.SubStream(language="dut",),
+            mkv_info.media_library.SubStream(language="eng",),
+            mkv_info.media_library.SubStream(language="dut",),
         ),
     )
     assert len(stream_info.videos) == 0

@@ -1,7 +1,8 @@
 import datetime
 import xml.etree.ElementTree as ET
 
-import mkv_info.library_xml as library_xml
+import mkv_info.media_library
+import mkv_info.library_xml
 
 
 def test_episode() -> None:
@@ -48,30 +49,30 @@ def test_episode() -> None:
         </episodedetails>
     """
     )
-    episode = library_xml.Episode.from_data(data)
-    assert episode == library_xml.Episode(
+    episode = mkv_info.library_xml.XML_Parser.parse_episode(data)
+    assert episode == mkv_info.media_library.Episode(
         title="Mhysa",
         duration=datetime.timedelta(minutes=63),
         season=3,
         episode=10,
-        streams=library_xml.StreamDetails(
+        streams=mkv_info.media_library.StreamDetails(
             videos=(
-                library_xml.VideoStream(
+                mkv_info.media_library.VideoStream(
                     codec="h264", width=1920, height=1168,
                 ),
             ),
             audios=(
-                library_xml.AudioStream(
+                mkv_info.media_library.AudioStream(
                     codec="dts", language="eng", channels=6,
                 ),
-                library_xml.AudioStream(
+                mkv_info.media_library.AudioStream(
                     codec="AAC", language="eng", channels=2,
                 ),
             ),
             subs=(
-                library_xml.SubStream(language="eng",),
-                library_xml.SubStream(language="eng",),
-                library_xml.SubStream(language="dut",),
+                mkv_info.media_library.SubStream(language="eng",),
+                mkv_info.media_library.SubStream(language="eng",),
+                mkv_info.media_library.SubStream(language="dut",),
             ),
         ),
     )
@@ -79,18 +80,22 @@ def test_episode() -> None:
     assert episode.duration == datetime.timedelta(minutes=63)
     assert episode.season == 3
     assert episode.episode == 10
-    assert episode.streams == library_xml.StreamDetails(
+    assert episode.streams == mkv_info.media_library.StreamDetails(
         videos=(
-            library_xml.VideoStream(codec="h264", width=1920, height=1168,),
+            mkv_info.media_library.VideoStream(codec="h264", width=1920, height=1168,),
         ),
         audios=(
-            library_xml.AudioStream(codec="dts", language="eng", channels=6,),
-            library_xml.AudioStream(codec="AAC", language="eng", channels=2,),
+            mkv_info.media_library.AudioStream(
+                codec="dts", language="eng", channels=6,
+            ),
+            mkv_info.media_library.AudioStream(
+                codec="AAC", language="eng", channels=2,
+            ),
         ),
         subs=(
-            library_xml.SubStream(language="eng",),
-            library_xml.SubStream(language="eng",),
-            library_xml.SubStream(language="dut",),
+            mkv_info.media_library.SubStream(language="eng",),
+            mkv_info.media_library.SubStream(language="eng",),
+            mkv_info.media_library.SubStream(language="dut",),
         ),
     )
 
@@ -144,37 +149,37 @@ def test_series() -> None:
         </tvshow>
         """
     )
-    series = library_xml.Series.from_data(data)
+    series = mkv_info.library_xml.XML_Parser.parse_series(data)
 
-    assert series == library_xml.Series(
+    assert series == mkv_info.media_library.Series(
         title="Game of Thrones",
         season=3,
         episode=60,
         year=2011,
         episodes=[
-            library_xml.Episode(
+            mkv_info.media_library.Episode(
                 title="Mhysa",
                 duration=datetime.timedelta(minutes=63),
                 season=3,
                 episode=10,
-                streams=library_xml.StreamDetails(
+                streams=mkv_info.media_library.StreamDetails(
                     videos=(
-                        library_xml.VideoStream(
+                        mkv_info.media_library.VideoStream(
                             codec="h264", width=1920, height=1168,
                         ),
                     ),
                     audios=(
-                        library_xml.AudioStream(
+                        mkv_info.media_library.AudioStream(
                             codec="dts", language="eng", channels=6,
                         ),
-                        library_xml.AudioStream(
+                        mkv_info.media_library.AudioStream(
                             codec="AAC", language="eng", channels=2,
                         ),
                     ),
                     subs=(
-                        library_xml.SubStream(language="eng",),
-                        library_xml.SubStream(language="eng",),
-                        library_xml.SubStream(language="dut",),
+                        mkv_info.media_library.SubStream(language="eng",),
+                        mkv_info.media_library.SubStream(language="eng",),
+                        mkv_info.media_library.SubStream(language="dut",),
                     ),
                 ),
             )
@@ -184,29 +189,29 @@ def test_series() -> None:
     assert series.season == 3
     assert series.episode == 60
     assert series.year == 2011
-    assert series.episodes[0] == library_xml.Episode(
+    assert series.episodes[0] == mkv_info.media_library.Episode(
         title="Mhysa",
         duration=datetime.timedelta(minutes=63),
         season=3,
         episode=10,
-        streams=library_xml.StreamDetails(
+        streams=mkv_info.media_library.StreamDetails(
             videos=(
-                library_xml.VideoStream(
+                mkv_info.media_library.VideoStream(
                     codec="h264", width=1920, height=1168,
                 ),
             ),
             audios=(
-                library_xml.AudioStream(
+                mkv_info.media_library.AudioStream(
                     codec="dts", language="eng", channels=6,
                 ),
-                library_xml.AudioStream(
+                mkv_info.media_library.AudioStream(
                     codec="AAC", language="eng", channels=2,
                 ),
             ),
             subs=(
-                library_xml.SubStream(language="eng",),
-                library_xml.SubStream(language="eng",),
-                library_xml.SubStream(language="dut",),
+                mkv_info.media_library.SubStream(language="eng",),
+                mkv_info.media_library.SubStream(language="eng",),
+                mkv_info.media_library.SubStream(language="dut",),
             ),
         ),
     )

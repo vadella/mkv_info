@@ -8,71 +8,97 @@ import datetime
 import re
 import typing
 import xml.etree.ElementTree as ET
+from . import media_library
+
+data: typing.TypeAlias = typing.Optional[ET.Element]
 
 
-@dataclasses.dataclass
-class StreamDetails:
-    videos: typing.Tuple[VideoStream, ...] = ()
-    audios: typing.Tuple[AudioStream, ...] = ()
-    subs: typing.Tuple[SubStream, ...] = ()
-
+class XML_Parser(media_library.LibraryFactory):
     @classmethod
-    def from_data(cls, data: typing.Optional[ET.Element]) -> StreamDetails:
+    def parse_stream_details(cls, data) -> media_library.StreamDetails:
 
         if data is None:
-            return cls()
+            return media_library.StreamDetails()
         streaminfo = data.find("streamdetails")
         if streaminfo is None:
-            return cls()
+            return media_library.StreamDetails()
         videos = tuple(
-            VideoStream.from_data(stream) for stream in streaminfo.findall("video")
+            cls.parse_video_stream(stream) for stream in streaminfo.findall("video")
         )
         audios = tuple(
-            AudioStream.from_data(stream) for stream in streaminfo.findall("audio")
+            cls.parse_audio_stream(stream) for stream in streaminfo.findall("audio")
         )
         subs = tuple(
-            SubStream.from_data(stream) for stream in streaminfo.findall("subtitle")
+            cls.parse_sub_stream(stream) for stream in streaminfo.findall("subtitle")
         )
-        return cls(videos=videos, audios=audios, subs=subs)
-
-
-@dataclasses.dataclass
-class VideoStream:
-    codec: typing.Optional[str] = None
-    width: typing.Optional[int] = None
-    height: typing.Optional[int] = None
+        return media_library.StreamDetails(videos=videos, audios=audios, subs=subs)
 
     @classmethod
-    def from_data(cls, stream: ET.Element) -> VideoStream:
+    def parse_video_stream(cls, stream: ET.Element) -> media_library.VideoStream:
         codec = get_text(stream, "codec")
         height = get_int(stream, "height")
         width = get_int(stream, "width")
 
-        return cls(codec=codec, width=width, height=height,)
-
-
-@dataclasses.dataclass
-class AudioStream:
-    codec: typing.Optional[str] = None
-    language: typing.Optional[str] = None
-    channels: typing.Optional[int] = None
+        return media_library.VideoStream(codec=codec, width=width, height=height,)
 
     @classmethod
-    def from_data(cls, stream: ET.Element) -> AudioStream:
+    def parse_audio_stream(cls, stream: ET.Element) -> media_library.AudioStream:
         codec: typing.Optional[str] = get_text(stream, "codec")
         language: typing.Optional[str] = get_text(stream, "language")
         channels: typing.Optional[int] = get_int(stream, "channels")
-        return cls(codec=codec, language=language, channels=channels,)
-
-
-@dataclasses.dataclass
-class SubStream:
-    language: typing.Optional[str] = None
+        return media_library.AudioStream(
+            codec=codec, language=language, channels=channels,
+        )
 
     @classmethod
-    def from_data(cls, stream: ET.Element) -> SubStream:
+    def parse_sub_stream(cls, stream: ET.Element) -> media_library.SubStream:
         language: typing.Optional[str] = get_text(stream, "language")
-        return cls(language=language)
+        return media_library.SubStream(language=language)
+
+    @classmethod
+    def parse_movie(cls, data: ET.Element) -> media_library.Movie:
+        title = get_text(data, "title")
+        year = get_int(data, "year")
+        duration = get_duration(data, "runtime")
+        streams = cls.parse_stream_details(data.find("fileinfo"))
+        return media_library.Movie(
+            title=title, year=year, duration=duration, streams=streams
+        )
+
+    @classmethod
+    def parse_episode(cls, data: ET.Element) -> media_library.Episode:
+        title = get_text(data, "title")
+        year = get_int(data, "year")
+        duration = get_duration(data, "runtime")
+        season = get_int(data, "season")
+        episode = get_int(data, "episode")
+        streams = cls.parse_stream_details(data.find("fileinfo"))
+        return media_library.Episode(
+            title=title,
+            year=year,
+            duration=duration,
+            season=season,
+            episode=episode,
+            streams=streams,
+        )
+
+    @classmethod
+    def parse_series(cls, data: ET.Element) -> media_library.Series:
+        title = get_text(data, "title")
+        year = get_int(data, "year")
+        season = get_int(data, "season")
+        episode = get_int(data, "episode")
+        episodes = [cls.parse_episode(tag) for tag in data.iter("episodedetails")]
+        return media_library.Series(
+            title=title, year=year, season=season, episode=episode, episodes=episodes,
+        )
+
+    @classmethod
+    def parse_video_database(cls, data: ET.Element) -> media_library.VideoDatabase:
+        return media_library.VideoDatabase(
+            movies=[cls.parse_movie(tag) for tag in data.iter("movie")],
+            series=[cls.parse_series(tag) for tag in data.iter("tvshow")],
+        )
 
 
 def get_text(element: ET.Element, tag: str) -> typing.Optional[str]:
@@ -100,125 +126,3 @@ def get_duration(element: ET.Element, tag: str) -> typing.Optional[datetime.time
         print(repr(data.text))
         return None
     return datetime.timedelta(minutes=int(match.group("minutes")))
-
-
-@dataclasses.dataclass
-class Movie:
-    title: typing.Optional[str] = None
-    year: typing.Optional[int] = None
-    duration: typing.Optional[datetime.timedelta] = None
-    streams: StreamDetails = dataclasses.field(default_factory=lambda: StreamDetails())
-
-    @classmethod
-    def from_data(cls, data: ET.Element) -> Movie:
-        title = get_text(data, "title")
-        year = get_int(data, "year")
-        duration = get_duration(data, "runtime")
-        streams = StreamDetails.from_data(data.find("fileinfo"))
-        return cls(title=title, year=year, duration=duration, streams=streams)
-
-    @property
-    def video_streams(self) -> typing.Iterator[VideoStream]:
-        yield from self.streams.videos
-
-    @property
-    def audio_streams(self) -> typing.Iterator[AudioStream]:
-        yield from self.streams.audios
-
-    @property
-    def sub_streams(self) -> typing.Iterator[SubStream]:
-        yield from self.streams.subs
-
-    @property
-    def streams_iterator(
-        self,
-    ) -> typing.Iterator[typing.Union[VideoStream, AudioStream, SubStream]]:
-        yield from self.video_streams
-        yield from self.audio_streams
-        yield from self.sub_streams
-
-    def __str__(self):
-        repr = f"""Movie(title=<{self.title}>, year=<{self.year}>, duration=<{self.duration}>)"""
-        stream_str = "\n\t".join(str(s) for s in self.streams_iterator)
-        return repr + "\n\t" + stream_str
-
-
-@dataclasses.dataclass
-class Episode:
-    title: typing.Optional[str] = None
-    year: typing.Optional[int] = None
-    duration: typing.Optional[datetime.timedelta] = None
-    season: typing.Optional[int] = None
-    episode: typing.Optional[int] = None
-    streams: StreamDetails = dataclasses.field(default_factory=lambda: StreamDetails())
-
-    @classmethod
-    def from_data(cls, data: ET.Element) -> Episode:
-        title = get_text(data, "title")
-        year = get_int(data, "year")
-        duration = get_duration(data, "runtime")
-        season = get_int(data, "season")
-        episode = get_int(data, "episode")
-        streams = StreamDetails.from_data(data.find("fileinfo"))
-        return cls(
-            title=title,
-            year=year,
-            duration=duration,
-            season=season,
-            episode=episode,
-            streams=streams,
-        )
-
-    @property
-    def video_streams(self) -> typing.Iterator[VideoStream]:
-        yield from self.streams.videos
-
-    @property
-    def audio_streams(self) -> typing.Iterator[AudioStream]:
-        yield from self.streams.audios
-
-    @property
-    def sub_streams(self) -> typing.Iterator[SubStream]:
-        yield from self.streams.subs
-
-    @property
-    def streams_iterator(
-        self,
-    ) -> typing.Iterator[typing.Union[VideoStream, AudioStream, SubStream]]:
-        yield from self.video_streams
-        yield from self.audio_streams
-        yield from self.sub_streams
-
-
-@dataclasses.dataclass
-class Series:
-
-    title: typing.Optional[str] = None
-    year: typing.Optional[int] = None
-    season: typing.Optional[int] = None
-    episode: typing.Optional[int] = None
-    episodes: typing.List[Episode] = dataclasses.field(default_factory=list)
-
-    @classmethod
-    def from_data(cls, data: ET.Element) -> Series:
-        title = get_text(data, "title")
-        year = get_int(data, "year")
-        season = get_int(data, "season")
-        episode = get_int(data, "episode")
-        episodes = [Episode.from_data(tag) for tag in data.iter("episodedetails")]
-        return cls(
-            title=title, year=year, season=season, episode=episode, episodes=episodes,
-        )
-
-
-@dataclasses.dataclass
-class VideoDatabase:
-    movies: typing.List[Movie]
-    series: typing.List[Series]
-
-    @classmethod
-    def from_data(cls, data: ET.Element) -> VideoDatabase:
-        return cls(
-            movies=[Movie.from_data(tag) for tag in data.iter("movie")],
-            series=[Series.from_data(tag) for tag in data.iter("tvshow")],
-        )
