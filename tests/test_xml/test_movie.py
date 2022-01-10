@@ -1,7 +1,8 @@
 import datetime
 import xml.etree.ElementTree as ET
 
-import mkv_info.library_xml as library_xml
+import mkv_info.library_xml
+import mkv_info.media_library
 
 
 def test_movie() -> None:
@@ -39,23 +40,25 @@ def test_movie() -> None:
         </movie>
         """
     )
-    movie = library_xml.Movie.from_data(data)
-    assert movie == library_xml.Movie(
+    movie = mkv_info.library_xml.XML_Parser.parse_movie(data)
+    assert movie == mkv_info.media_library.Movie(
         title="2001: A Space Odyssey",
         duration=datetime.timedelta(minutes=149),
         year=1968,
-        streams=library_xml.StreamDetails(
+        streams=mkv_info.media_library.StreamDetails(
             videos=(
-                library_xml.VideoStream(codec="h264", width=1920, height=864,),
+                mkv_info.media_library.VideoStream(
+                    codec="h264", width=1920, height=864,
+                ),
             ),
             audios=(
-                library_xml.AudioStream(
+                mkv_info.media_library.AudioStream(
                     codec="ac-3", language="eng", channels=6,
                 ),
             ),
             subs=(
-                library_xml.SubStream(language="eng",),
-                library_xml.SubStream(language="dut",),
+                mkv_info.media_library.SubStream(language="eng",),
+                mkv_info.media_library.SubStream(language="dut",),
             ),
         ),
     )
